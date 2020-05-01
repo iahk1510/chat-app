@@ -9,7 +9,9 @@ const addUser = ({id, name, room}) => {
             err: 'User is unavailable'
         }
     }
-    users.push({id, name, room});
+    const user = {id,name,room};
+    users.push(user);
+    return {user};
 }
 
 const removeUser = (id) => {

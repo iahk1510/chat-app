@@ -11,11 +11,30 @@ const app = express();
 const server = http.Server(app);
 const io = require('socket.io')(server);
 
-io.on('connect', (socket) => {
-    console.log('we have a new connection!!!');
-    socket.on('join', ({name, room}) => {
-        console.log(name, room);
+io.on('connection', (socket) => {
+    //when a new account join room
+    socket.on('join', ({name, room}, callback) => {
+        //console.log(socket);
+        //add newbie to member list
+        const {error, user} = addUser({id:socket.id, name, room});
+        if (error) return callback(err);
+         // system send to people who has joined room
+        socket.emit('message', {user:'admin', text:`${user.name}, welcome to the room ${user.room}`});
+         // system send to all other members of the room about newbie (except newbie)
+        socket.broadcast.to(user.room).emit('message',{user:'admin', text:`${user.name} has joined!`});
+        // join user in a room (particually here's the newbie)
+        socket.join(user.room);
+        
+        callback();
     });
+
+    socket.on('sendMessage', (message, callback) => {
+        const user = getUser(socket.id);
+        console.log(user);
+        io.to(user.room).emit('message', {user: user.name, text: message});
+        callback();
+    });
+
     socket.on('disconnect', () => {
         console.log('User has left');
     });
